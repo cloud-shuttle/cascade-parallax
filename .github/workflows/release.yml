@@ -1,0 +1,60 @@
+name: release
+
+# Builds an unsigned (ad hoc signed) Parallax.app on v* tags and attaches a
+# zip plus SHA-256 checksum to the GitHub Release (created as a draft if it
+# does not exist yet). Not notarized: see docs/release.md.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  macos-app:
+    runs-on: macos-26
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Rust (bundled parallax-server)
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        with:
+          toolchain: stable
+      - name: Toolchain versions
+        run: |
+          xcodebuild -version
+          swift --version
+          cargo --version
+      - name: Test client
+        run: client/scripts/test.sh
+      - name: Build release app
+        env:
+          PARALLAX_SIGN_IDENTITY: ""
+        run: client/scripts/build-app.sh release
+      - name: Package
+        id: pkg
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          name="Parallax-${TAG}-macos-arm64.zip"
+          ditto -c -k --keepParent client/build/Parallax.app "$name"
+          shasum -a 256 "$name" > "$name.sha256"
+          echo "zip=$name" >> "$GITHUB_OUTPUT"
+      - name: Attach to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          ZIP: ${{ steps.pkg.outputs.zip }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --draft --verify-tag --title "Parallax $TAG" \
+              --notes "Unsigned build (ad hoc signature, not notarized). On first launch, right-click Parallax.app and choose Open."
+          fi
+          gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber "$ZIP" "$ZIP.sha256"
