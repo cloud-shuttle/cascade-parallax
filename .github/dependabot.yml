@@ -1,0 +1,36 @@
+# Weekly dependency update PRs. Grouped per ecosystem to keep the PR count low.
+version: 2
+updates:
+  - package-ecosystem: "swift"
+    directory: "/client"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Australia/Sydney"
+    open-pull-requests-limit: 5
+    groups:
+      swift-client:
+        patterns:
+          - "*"
+  - package-ecosystem: "cargo"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Australia/Sydney"
+    open-pull-requests-limit: 5
+    groups:
+      cargo-server:
+        patterns:
+          - "*"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Australia/Sydney"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"

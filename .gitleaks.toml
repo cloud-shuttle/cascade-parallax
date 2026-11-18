@@ -1,0 +1,19 @@
+# Gitleaks configuration for cascade-parallax.
+# Extends the default gitleaks ruleset. Allowlist entries below cover only
+# findings triaged as confirmed false positives during the Cascade security
+# baseline on 2026-11-18. Do not add real credentials here: rotate the
+# credential and remove it from the code instead.
+title = "cascade-parallax gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Config parser test fixture checking that values containing '=' are kept intact"
+condition = "AND"
+paths = [
+  '''client/Tests/ParallaxRemoteTests/LocalServerTests\.swift''',
+]
+regexes = [
+  '''^key=with=equals$''',
+]
